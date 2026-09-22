@@ -34,6 +34,14 @@ import re
 import sys
 from dataclasses import dataclass, field
 
+
+def _normalize_ws(s: str) -> str:
+    """Collapse any run of whitespace (including narrow no-break space and
+    other unicode spaces some models emit between numbers and units) to a
+    single regular space, so answer-content checks aren't defeated by
+    cosmetic formatting differences."""
+    return re.sub(r"\s+", " ", s)
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from agent.config import Config
@@ -77,7 +85,7 @@ CASES = [
          expect_tools=["check_order_status", "search_knowledge_base"],
          tags=["agent", "multi-tool"]),
 
-    Case("escalation_delay", "my order ORD1002 is 3 weeks late and has no tracking",
+    Case("escalation_delay", "my order ORD1005 is 3 weeks late and has no tracking",
          expect_tools=["create_support_ticket"],
          tags=["agent", "escalation"]),
 
@@ -208,7 +216,7 @@ def check(case: Case, rec: RecordingAgent) -> list[str]:
         failures.append(f"expected no tool calls, got: {called}")
 
     for needle in case.expect_answer_contains:
-        if needle.lower() not in rec.answer.lower():
+        if _normalize_ws(needle.lower()) not in _normalize_ws(rec.answer.lower()):
             failures.append(f"answer missing {needle!r} (got: {rec.answer[:120]!r})")
 
     return failures
