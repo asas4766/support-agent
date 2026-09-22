@@ -3,7 +3,7 @@
 Talk to the NimbusCart support agent.
 
     python demo.py                 interactive chat
-    python demo.py --scripted      plays a fixed set of example questions,
+    python demo.py --scripted      plays a fixed set of example questions
                                 
 """
 
