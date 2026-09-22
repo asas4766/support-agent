@@ -119,7 +119,7 @@ The agent retrieves the return policy from the knowledge base.
 **Screenshot 2: Order lookup + Smart escalation**
 
 ![Demo 2](demo2.png)
-The agent checks order status in a single conversation. When a customer's issue is outside policy (a 3-week delay with no tracking), the agent recognizes it needs human intervention and asks for contact info to file a support ticket.
+The agent checks order status in a single conversation. When a customer's issue is outside policy (a 3-week delay with no tracking), the agent recognizes it needs human intervention, files a support ticket immediately, and asks for contact info afterward so a human can follow up.
 
 ## Retrieval: two backends, same interface
 
@@ -170,6 +170,16 @@ your configured provider and records what it really calls — that's the only
 mode that tests the model's own tool-selection behavior, and it costs an API
 call (or needs Ollama running) per case.
 
+**Debugging a failing eval case:** `--live` output only shows which tools got
+called, not what the model actually said. `debug_escalation.py` reuses
+`tests.eval.RecordingAgent` to print the full answer text for the two
+escalation cases, which is what actually explains *why* a case is failing
+(e.g. the model saying "I'll file a ticket" without calling the tool):
+
+```bash
+python debug_escalation.py
+```
+
 ## Project structure
 
 ```
@@ -187,6 +197,7 @@ support-agent/
 │   ├── test_tools.py           # unit tests, no API key needed
 │   └── eval.py                 # behavioral eval — offline stub + --live mode
 ├── demo.py                     # CLI: interactive or --scripted
+├── debug_escalation.py         # dev tool: prints model answers (not just tool calls) for escalation cases
 ├── requirements.txt
 └── .env.example
 ```
