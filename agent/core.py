@@ -60,7 +60,15 @@ class SupportAgent:
             for block in result["content"]:
                 if block["type"] != "tool_use":
                     continue
-                tool_result = dispatch_tool(block["name"], block["input"], self.retriever, self.config.tickets_path)
+                try:
+                    tool_result = dispatch_tool(
+                        block["name"], block["input"], self.retriever, self.config.tickets_path
+                    )
+                except Exception as e:
+                    # Don't let a bad tool call (bad input, retriever error, etc.)
+                    # crash the whole conversation — feed the error back so the
+                    # model can recover or decide to escalate itself.
+                    tool_result = {"error": f"{type(e).__name__}: {e}", "tool": block["name"]}
                 if on_tool_call:
                     on_tool_call(block["name"], block["input"], tool_result)
                 tool_results.append(
@@ -69,4 +77,38 @@ class SupportAgent:
 
             self.history.append({"role": "user", "content": tool_results})
 
-        return "I'm having trouble resolving this — let me escalate it to a human agent."
+        return self._escalate_after_max_turns()
+
+    def _escalate_after_max_turns(self) -> str:
+        """
+        Called when the loop exhausts its turn budget without producing a
+        plain-text answer. Actually files a ticket rather than just telling
+        the customer we've escalated — so what we say and what we do match.
+        """
+        try:
+            ticket = dispatch_tool(
+                "create_support_ticket",
+                {
+                    "customer_email": "unknown@nimbuscart.example",  # no email collected yet; a
+                                                                       # real deployment should ask
+                                                                       # for one earlier in the flow
+                    "subject": "Agent could not resolve within turn limit",
+                    "description": (
+                        "The automated agent hit its turn limit without resolving the "
+                        f"customer's issue. Conversation history:\n{self.history}"
+                    ),
+                },
+                self.retriever,
+                self.config.tickets_path,
+            )
+            return (
+                "I wasn't able to resolve this on my own, so I've escalated it to a "
+                f"human agent (ticket {ticket.get('ticket_id', 'N/A')}). "
+                "They'll follow up within 1 business day."
+            )
+        except Exception:
+            # Even escalation failed — be honest, don't claim a ticket exists.
+            return (
+                "I'm sorry — I couldn't resolve this and I wasn't able to file a "
+                "ticket automatically. Please contact support@nimbuscart.example directly."
+            )

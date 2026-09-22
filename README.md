@@ -147,6 +147,29 @@ required:
 python -m pytest tests/ -v
 ```
 
+## Evaluation
+
+`tests/eval.py` runs a set of named scenarios (policy questions, order
+lookups, multi-tool turns, escalation cases) against the agent and checks
+which tools got called and what the retriever returned.
+
+```bash
+python -m tests.eval          # offline, no API key, no network
+python -m tests.eval --live   # against your configured provider
+python -m tests.eval --filter rag   # run a subset by name
+```
+
+**These two modes check different things.** Offline mode replaces the LLM
+with a keyword-matching stub, then routes the resulting tool call(s) through
+the *real* retriever and mock backend — so it verifies that dispatch and
+retrieval are wired correctly (the right chunk comes back for a paraphrased
+query, `check_order_status` returns the right order, escalation writes a
+ticket), but it does **not** verify that a real model would choose the right
+tool for a given message. `--live` runs the actual `SupportAgent` against
+your configured provider and records what it really calls — that's the only
+mode that tests the model's own tool-selection behavior, and it costs an API
+call (or needs Ollama running) per case.
+
 ## Project structure
 
 ```
@@ -161,7 +184,8 @@ support-agent/
 ├── knowledge_base/
 │   └── faq.md                # NimbusCart's (fictional) policy docs
 ├── tests/
-│   └── test_tools.py          # unit tests, no API key needed
+│   ├── test_tools.py           # unit tests, no API key needed
+│   └── eval.py                 # behavioral eval — offline stub + --live mode
 ├── demo.py                     # CLI: interactive or --scripted
 ├── requirements.txt
 └── .env.example
