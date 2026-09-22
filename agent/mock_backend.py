@@ -33,6 +33,15 @@ _ORDERS = {
         "eta": None,
         "tracking_number": None,
     },
+    "ORD1005": {
+        # Genuinely overdue: still "Processing" past its ETA, with no tracking
+        # number ever assigned. Used by the escalation_delay eval case — unlike
+        # ORD1002, this one's data actually backs up a "this is late" complaint.
+        "status": "Processing",
+        "item": "Desk Lamp",
+        "eta": (datetime.now() - timedelta(days=6)).strftime("%Y-%m-%d"),
+        "tracking_number": None,
+    },
 }
 
 
