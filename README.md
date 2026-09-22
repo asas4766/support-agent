@@ -195,9 +195,9 @@ support-agent/
 │   └── faq.md                # NimbusCart's (fictional) policy docs
 ├── tests/
 │   ├── test_tools.py           # unit tests, no API key needed
+    ├── debug_escalation.py     # dev tool: prints model answers (not just tool calls) for escalation cases   
 │   └── eval.py                 # behavioral eval — offline stub + --live mode
 ├── demo.py                     # CLI: interactive or --scripted
-├── debug_escalation.py         # dev tool: prints model answers (not just tool calls) for escalation cases
 ├── requirements.txt
 └── .env.example
 ```
