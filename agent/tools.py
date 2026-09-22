@@ -48,11 +48,18 @@ TOOL_SCHEMAS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "customer_email": {"type": "string", "description": "The customer's email address."},
+                "customer_email": {
+                    "anyOf": [{"type": "string"}, {"type": "null"}],
+                    "description": (
+                        "The customer's email address, if they've given it in this "
+                        "conversation. Use null if they haven't — do not wait to "
+                        "collect it before escalating."
+                    ),
+                },
                 "subject": {"type": "string", "description": "A short one-line summary of the issue."},
                 "description": {"type": "string", "description": "Full details a human agent would need to follow up."},
             },
-            "required": ["customer_email", "subject", "description"],
+            "required": ["subject", "description"],
         },
     },
 ]
@@ -74,7 +81,7 @@ def dispatch_tool(name: str, tool_input: dict, retriever, tickets_path: str) -> 
 
     if name == "create_support_ticket":
         return mock_backend.create_support_ticket(
-            customer_email=tool_input["customer_email"],
+            customer_email=tool_input.get("customer_email") or "unknown@nimbuscart.example",
             subject=tool_input["subject"],
             description=tool_input["description"],
             tickets_path=tickets_path,
